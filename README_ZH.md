@@ -10,6 +10,8 @@
 
 *一个进行中的 integration review：`navigation`、`gate-wiring` 和 `test-coverage` 并行运行；`verify-evidence` 依赖这三个任务。右侧 pane 在对话旁边显示节点状态、依赖关系和任务详情。*
 
+https://github.com/user-attachments/assets/cd918f5f-3b89-43c8-9d75-34fddadb2760
+
 截图展示的是**英语**界面，即新安装的默认语言；使用 `--lang ko` 可选择韩语，使用 `--lang zh-cn` 可选择简体中文。节点标签来自你的 workflow，按原样显示。断开连接后，viewer 也会显示明确的关闭提示。
 
 ## 主要功能

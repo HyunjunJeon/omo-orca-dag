@@ -10,6 +10,8 @@ English | [한국어](README_KO.md) | [简体中文](README_ZH.md)
 
 *An integration review in progress: `navigation`, `gate-wiring`, and `test-coverage` run in parallel; `verify-evidence` depends on all three. The right pane shows node states, dependencies, and task details beside the conversation.*
 
+https://github.com/user-attachments/assets/cd918f5f-3b89-43c8-9d75-34fddadb2760
+
 The screenshots show the **English** interface, which is the default for new installations; select Korean with `--lang ko` or Simplified Chinese with `--lang zh-cn`. Node labels come from your workflow and are displayed unchanged. The viewer also shows an explicit close hint after disconnection.
 
 ## Features
