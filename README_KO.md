@@ -2,7 +2,7 @@
 
 **OmO workflow DAG를 Herdr 옆 pane에서 실시간으로 확인하세요.**
 
-[English](README.md) | 한국어
+[English](README.md) | 한국어 | [简体中文](README_ZH.md)
 
 `omo-herdr-dag`는 workflow DAG가 생성되면 [Herdr](https://herdr.dev/)에 전용 TUI를 여는 [OmO](https://github.com/code-yeongyu/oh-my-openagent) 확장입니다. 대화 옆에서 노드 상태와 의존 관계를 확인할 수 있으며, 포커스는 기존 pane에 유지합니다.
 
@@ -10,7 +10,7 @@
 
 *실행 중인 workflow 예시입니다. `home`, `order`, `light`가 저녁 메뉴 후보를 병렬로 조사하고, 세 작업에 의존하는 `verify`는 대기합니다. 왼쪽에서 대화를 이어가면서 오른쪽 pane에서 각 작업의 상태와 전체 의존 관계를 확인할 수 있습니다.*
 
-스크린샷은 이전 버전의 한국어 화면입니다. 새 설치의 기본 언어는 **영어**이며 `--lang ko`로 한국어를 선택할 수 있습니다. 노드 이름은 언어 설정과 관계없이 workflow에 지정한 값을 그대로 표시합니다. 현재 버전은 연결 종료 시 닫아도 된다는 안내도 추가로 표시합니다.
+스크린샷은 이전 버전의 한국어 화면입니다. 새 설치의 기본 언어는 **영어**이며 `--lang ko`로 한국어를, `--lang zh-cn`로 중국어 간체를 선택할 수 있습니다. 노드 이름은 언어 설정과 관계없이 workflow에 지정한 값을 그대로 표시합니다. 현재 버전은 연결 종료 시 닫아도 된다는 안내도 추가로 표시합니다.
 
 ## 주요 기능
 
@@ -36,7 +36,7 @@
 
 **이 확장은 Herdr에 OmO를 커스텀 에이전트로 등록할 필요가 없습니다.** Herdr의 일반 터미널 pane에서 `omo`를 직접 실행하면 됩니다. 확장은 pane ID와 일반 `herdr pane` 명령을 사용하며, `herdr agent start`나 사이드바의 에이전트 인식에 의존하지 않습니다.
 
-구조상 이 방식으로 사용할 수 있지만, **커스텀 설정이 없는 순정 Herdr에서의 전체 동작은 아직 검증하지 않았습니다.** 정확한 확인 범위는 [검증 및 호환성 기록](VERIFICATION.md)을 참고하세요. Windows PowerShell에서 viewer 실행과 실제 저장된 workflow 표시는 로컬 검증했습니다. 네이티브 macOS는 아직 검증하지 않았습니다. Windows pane의 셸은 cmd.exe나 Git Bash가 아닌 PowerShell을 전제로 합니다.
+구조상 이 방식으로 사용할 수 있으며, 커스텀 설정이 없는 순정 Herdr 설치에서 네이티브 macOS 기준으로 전체 동작을 검증했습니다. Windows PowerShell에서는 viewer 실행과 실제 렌더링을 앞서 검증했습니다. 정확한 확인 범위와 남은 제한은 [검증 및 호환성 기록](VERIFICATION.md)을 참고하세요. Windows pane의 셸은 cmd.exe나 Git Bash가 아닌 PowerShell을 전제로 합니다.
 
 ## 설치
 
@@ -49,13 +49,14 @@ npx omo-herdr-dag@latest install --dry-run
 npx omo-herdr-dag@latest install
 ```
 
-최초 설치 언어는 영어입니다. 한국어를 사용하려면 다음과 같이 설치하세요.
+최초 설치 언어는 영어입니다. 한국어 또는 중국어 간체를 사용하려면 다음과 같이 설치하세요.
 
 ```bash
 npx omo-herdr-dag@latest install --lang ko
+npx omo-herdr-dag@latest install --lang zh-cn
 ```
 
-한국어에서 영어로 되돌리는 경우를 포함해 영어를 명시적으로 선택하려면 `npx omo-herdr-dag@latest install --lang en`을 실행하세요. 다른 언어를 지정하지 않으면 업데이트 때도 기존 선택을 유지합니다.
+한국어 또는 중국어 간체에서 영어로 되돌리는 경우를 포함해 영어를 명시적으로 선택하려면 `npx omo-herdr-dag@latest install --lang en`을 실행하세요. 다른 언어를 지정하지 않으면 업데이트 때도 기존 선택을 유지합니다.
 
 `npm install -g omo-herdr-dag`로 CLI를 설치한 다음 `omo-herdr-dag install`을 실행할 수도 있습니다. npm 패키지를 받는 것만으로 OmO 설정이 변경되지는 않습니다. 명시적인 `install` 명령이 확장을 복사합니다. Herdr와 OmO는 별도로 설치해야 합니다.
 
@@ -72,7 +73,7 @@ node scripts/install.mjs --dry-run
 node scripts/install.mjs
 ```
 
-런타임 npm 의존성은 없습니다. Windows 테스트는 개발 전용 `node-pty` ConPTY 브리지를 사용하며, POSIX 테스트에는 Python 3와 Unix PTY가 필요합니다. `--dry-run`은 파일을 변경하지 않고 설치 위치만 출력합니다. 소스 설치 프로그램에서도 `--lang en` 또는 `--lang ko`를 사용할 수 있습니다.
+런타임 npm 의존성은 없습니다. Windows 테스트는 개발 전용 `node-pty` ConPTY 브리지를 사용하며, POSIX 테스트에는 Python 3와 Unix PTY가 필요합니다. `--dry-run`은 파일을 변경하지 않고 설치 위치만 출력합니다. 소스 설치 프로그램에서도 `--lang en`, `--lang ko`, `--lang zh-cn`을 사용할 수 있습니다.
 
 설치 위치는 `--agent-dir`, `OMO_CODING_AGENT_DIR`, `SENPI_CODING_AGENT_DIR` 순으로 선택하며, 모두 없으면 `~/.omo/agent`를 사용합니다. 예를 들어 `OMO_CODING_AGENT_DIR=~/.omo`이면 진입점은 `~/.omo/extensions/omo-herdr-dag.js`입니다. 기본 대체 경로의 구조는 다음과 같습니다.
 
@@ -143,7 +144,7 @@ q를 눌러 닫아도 됩니다.
 | --- | --- | --- |
 | `OMO_HERDR_DAG_STATE_DIR` | `~/.omo/agent/herdr-dag/` | snapshot과 pane 기록의 저장 위치. OmO 시작 전에 설정합니다. |
 | `OMO_HERDR_DAG_TASK_STATE_DIR` | `<프로젝트>/.omo/senpi-task/` | `tasks/`를 포함하는 OmO task 저장소 경로. OmO의 `task.state_dir`을 변경했다면 같은 경로로 지정합니다. |
-| `OMO_HERDR_DAG_LANG` | 설치 시 저장한 언어, 최초 `en` | `en` 또는 `ko`로 인터페이스 언어를 덮어씁니다. OmO 시작 또는 확장 재로딩 전에 설정합니다. |
+| `OMO_HERDR_DAG_LANG` | 설치 시 저장한 언어, 최초 `en` | `en`, `ko`, `zh-cn`으로 인터페이스 언어를 덮어씁니다. OmO 시작 또는 확장 재로딩 전에 설정합니다. |
 | `OMO_HERDR_DAG_NODE` | 검증한 호스트 Node, 없으면 `PATH`의 `node` | Viewer를 실행할 Node.js 24+ 실행 파일. OmO 시작 전에 설정하며 공백이 있는 경로도 지원합니다. |
 | `OMO_HERDR_DAG_RETENTION_DAYS` | `14` | 시작 시 상태 디렉터리에서 만료된 snapshot과 pane 기록을 정리하기까지의 일수. 현재 세션의 파일은 항상 보존하며 `0` 또는 잘못된 값은 정리를 비활성화합니다. OmO 시작 또는 확장 재로딩 전에 설정합니다. |
 
