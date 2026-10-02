@@ -8,29 +8,9 @@
 
 이 프로젝트는 같은 viewer를 [Herdr](https://herdr.dev/)용으로 제공하는 [jc01rho/omo-herdr-dag](https://github.com/jc01rho/omo-herdr-dag)에서 파생했으며 Orca만 지원합니다. **Herdr를 쓴다면 omo-herdr-dag를 설치하세요.** 두 확장은 함께 설치할 수 있고, 같은 곳에 pane을 여는 일은 없습니다.
 
-```text
-OMO  /  DAG  t Tasks (0)
-Selected run: Integration check · Active runs: 1
-Running · Done 1/4
-                      ╭────────────────────────────────╮
-                      │ > [+] analyze                  │
-                      │ ✓ Completed                    │
-                      │ Start node                     │
-                      ╰────────────────────────────────╯
-                                       │
-                     ┌─────────────────┴─────────────────┐
-                     ▼                                   ▼
-    ╭────────────────────────────────╮  ╭────────────────────────────────╮
-    │   [-] server                   │  │   [-] ui                       │
-    │ ● Running                      │  │ ● Running                      │
-    │ ← analyze                      │  │ ← analyze                      │
-    ╰────────────────────────────────╯  ╰────────────────────────────────╯
-───────────────────────────────────────────────────────────────────────────────
-● Connected
-↑↓ Scroll  ←→ Runs  q Close
-```
+![왼쪽 Orca 터미널 pane의 OmO가 mass ulw workflow를 실행하고, 오른쪽 omo-orca-dag viewer가 그 DAG를 보여 주는 화면: Tokenizer + tests 완료, Counter/ranker + tests 실행 중, CLI와 검증 노드 대기.](docs/screenshots/orca-dag-pane.png)
 
-*workflow가 실행 중일 때의 viewer pane입니다(영어 화면). `analyze`가 끝났고 `server`와 `ui`가 병렬로 실행 중입니다. `--lang ko`로 설치하면 한국어로 표시합니다.*
+*Orca에서 실제로 실행한 `mass ulw` 화면입니다(영어 화면, `--lang ko`로 설치하면 한국어로 표시). 왼쪽 OmO가 작은 단어 빈도 CLI를 만드는 동안, 오른쪽 viewer가 workflow DAG를 보여 줍니다. `Tokenizer + tests`는 끝났고 `Counter/ranker + tests`는 실행 중이며, CLI와 검증 노드는 이 둘을 기다립니다.*
 
 ## 목차
 

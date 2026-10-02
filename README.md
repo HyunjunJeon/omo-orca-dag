@@ -8,29 +8,9 @@ English | [한국어](README_KO.md)
 
 This project is derived from [jc01rho/omo-herdr-dag](https://github.com/jc01rho/omo-herdr-dag), which provides the same viewer for [Herdr](https://herdr.dev/). It covers Orca only. **If you use Herdr, install omo-herdr-dag;** the two can be installed side by side and never open a pane in the same place.
 
-```text
-OMO  /  DAG  t Tasks (0)
-Selected run: Integration check · Active runs: 1
-Running · Done 1/4
-                      ╭────────────────────────────────╮
-                      │ > [+] analyze                  │
-                      │ ✓ Completed                    │
-                      │ Start node                     │
-                      ╰────────────────────────────────╯
-                                       │
-                     ┌─────────────────┴─────────────────┐
-                     ▼                                   ▼
-    ╭────────────────────────────────╮  ╭────────────────────────────────╮
-    │   [-] server                   │  │   [-] ui                       │
-    │ ● Running                      │  │ ● Running                      │
-    │ ← analyze                      │  │ ← analyze                      │
-    ╰────────────────────────────────╯  ╰────────────────────────────────╯
-───────────────────────────────────────────────────────────────────────────────
-● Connected
-↑↓ Scroll  ←→ Runs  q Close
-```
+![OmO in an Orca terminal pane on the left runs a mass ulw workflow; on the right, the omo-orca-dag viewer shows its DAG with Tokenizer + tests completed, Counter/ranker + tests running, and the CLI and verification nodes pending.](docs/screenshots/orca-dag-pane.png)
 
-*The viewer pane while a workflow runs: `analyze` has finished, and `server` and `ui` run in parallel.*
+*A real `mass ulw` run in Orca. On the left, OmO builds a small word-frequency CLI; on the right, the viewer shows the workflow DAG: `Tokenizer + tests` has finished, `Counter/ranker + tests` is running, and the CLI and verification nodes wait for them.*
 
 ## Contents
 
