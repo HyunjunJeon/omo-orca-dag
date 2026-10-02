@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DagPane, dagTitle, isDagViewerPane } from '../src/controller.mjs';
+import { DagPane, isDagViewerPane } from '../src/controller.mjs';
 import { readJson, writeJson } from '../src/storage.mjs';
 import { payload, sessionId } from './fixtures.mjs';
 import { normalizeRun } from '../src/model.mjs';
@@ -18,22 +18,22 @@ async function setup(t) {
   });
   const calls = [], panes = new Set();
   let number = 0;
-  const herdr = async (...args) => {
+  // Mirrors the Orca adapter's results; a closed or stale handle fails like `orca terminal show`.
+  const orca = async (...args) => {
     calls.push(args);
-    if (args[0] === 'split') { const pane_id = `test:p${++number}`; panes.add(pane_id); return { pane: { pane_id } }; }
-    if (args[0] === 'get' && !panes.has(args[1])) throw new Error('pane_not_found');
-    if (args[0] === 'list') return { panes: [
-      { pane_id: options.parentPane, tab_id: 'tab0', label: 'OmO' },
-      ...[...panes].map(pane_id => ({ pane_id, tab_id: 'tab0', label: dagTitle(sessionId) })),
-    ] };
+    if (args[0] === 'split') { const handle = `term_p${++number}`; panes.add(handle); return handle; }
+    if (args[0] === 'get' && !panes.has(args[1])) throw new Error('terminal_handle_stale');
+    if (args[0] === 'list') return [
+      { handle: options.parentPane, tabId: 'tab0', title: 'OmO' },
+      ...[...panes].map(handle => ({ handle, tabId: 'tab0', title: 'OmO DAG' })),
+    ];
     if (args[0] === 'close') {
-      if (!panes.has(args[1])) throw new Error('pane_not_found');
+      if (!panes.has(args[1])) throw new Error('terminal_handle_stale');
       panes.delete(args[1]);
     }
-    return {};
   };
-  const options = { sessionId, parentPane: 'test:p0', socket: '/tmp/test.sock', stateDir,
-    cwd: "/tmp/project with ' quotes", node: '/usr/bin/node', viewer: '/tmp/viewer.mjs', herdr };
+  const options = { sessionId, parentPane: 'term_p0', scope: 'orca:test', stateDir,
+    cwd: "/tmp/project with ' quotes", node: '/usr/bin/node', viewer: '/tmp/viewer.mjs', panes: orca };
   const controller = new DagPane(options);
   controllers.add(controller);
   return { calls, panes, options, controller, controllers };
@@ -215,14 +215,10 @@ test('empty startup and foreign task events never create a pane', async t => {
   assert.equal(calls.length, 0);
 });
 
-test('a burst of events creates one pane, preserves focus, updates the same state file', async t => {
-  const { calls, controller } = await setup(t);
+test('a burst of events splits the source pane once and updates the same state file', async t => {
+  const { calls, controller, options } = await setup(t);
   await Promise.all(Array.from({ length: 12 }, () => controller.receive(payload())));
-  const split = calls.find(c => c[0] === 'split');
-  assert.equal(calls.filter(c => c[0] === 'split').length, 1);
-  assert.ok(split.includes('--no-focus'));
-  assert.ok(split.includes('right'));
-  assert.equal(split[split.indexOf('--ratio') + 1], '0.65');
+  assert.deepEqual(calls.filter(c => c[0] === 'split'), [['split', options.parentPane]]);
   assert.equal(calls.filter(c => c[0] === 'run').length, 1);
   const next = payload(); next.runs[0].nodes.forEach(n => { n.state = 'completed'; }); next.runs[0].status = 'completed';
   await controller.receive(next);
@@ -252,7 +248,7 @@ test('different sessions cannot affect each other and empty DAG lists do not spl
 });
 test('a failed split is reported once; later events do not create orphan panes', async t => {
   const { options } = await setup(t); let calls = 0; const messages = [];
-  const controller = new DagPane({ ...options, herdr: async () => { calls++; throw new Error('socket timeout'); }, notify: m => messages.push(m) });
+  const controller = new DagPane({ ...options, panes: async () => { calls++; throw new Error('socket timeout'); }, notify: m => messages.push(m) });
   await assert.rejects(controller.receive(payload()), /timeout/);
   const first = calls;
   await controller.receive(payload());
@@ -275,11 +271,10 @@ test('opening closes leftover DAG panes and reuses a live recorded pane', async 
   assert.equal(panes.has('test:duplicate'), false);
 });
 
-test('DAG viewer panes are identified by title prefix', () => {
-  assert.equal(isDagViewerPane({ label: dagTitle(sessionId) }), true);
-  assert.equal(isDagViewerPane({ terminal_title: 'DAG · leftover' }), true);
-  assert.equal(isDagViewerPane({ terminal_title: 'OmO DAG' }), true);
-  assert.equal(isDagViewerPane({ label: 'OmO', terminal_title: 'OmO' }), false);
+test('DAG viewer panes are identified by the title the viewer sets', () => {
+  assert.equal(isDagViewerPane({ title: 'OmO DAG' }), true);
+  assert.equal(isDagViewerPane({ title: 'OmO' }), false);
+  assert.equal(isDagViewerPane({ title: 'OmO DAG · other' }), false);
 });
 
 test('the selected language is persisted for the viewer', async t => {

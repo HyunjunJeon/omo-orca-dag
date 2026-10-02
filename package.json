@@ -1,26 +1,26 @@
 {
-  "name": "omo-herdr-dag",
-  "version": "1.6.0",
-  "description": "Live OmO workflow DAGs in a Herdr side pane.",
+  "name": "omo-orca-dag",
+  "version": "0.1.0",
+  "description": "Live OmO workflow DAGs in an Orca side pane.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jc01rho/omo-herdr-dag.git"
+    "url": "git+https://github.com/HyunjunJeon/omo-orca-dag.git"
   },
-  "homepage": "https://github.com/jc01rho/omo-herdr-dag#readme",
+  "homepage": "https://github.com/HyunjunJeon/omo-orca-dag#readme",
   "bugs": {
-    "url": "https://github.com/jc01rho/omo-herdr-dag/issues"
+    "url": "https://github.com/HyunjunJeon/omo-orca-dag/issues"
   },
   "keywords": [
     "omo",
-    "herdr",
+    "orca",
     "dag",
     "tui",
     "workflow"
   ],
   "type": "module",
   "bin": {
-    "omo-herdr-dag": "bin/omo-herdr-dag.mjs"
+    "omo-orca-dag": "bin/omo-orca-dag.mjs"
   },
   "exports": {
     ".": "./dist/extension.mjs"
@@ -28,10 +28,12 @@
   "files": [
     "bin/",
     "dist/",
+    "src/",
+    "extension.mjs",
+    "scripts/install.mjs",
     "LICENSE",
     "README.md",
     "README_KO.md",
-    "README_ZH.md",
     "CONTRIBUTING.md",
     "VERIFICATION.md",
     "RELEASING.md"

@@ -10,16 +10,16 @@ import { DagPane } from '../src/controller.mjs';
 for (const suffix of ['plain space ', "owner's space "]) {
   test(`controller invokes viewer with literal ${suffix} paths in the host shell`, async t => {
     // Given an isolated probe, including executable and argument paths with spaces.
-    const directory = await mkdtemp(join(tmpdir(), `herdr-${suffix}`));
+    const directory = await mkdtemp(join(tmpdir(), `orca-dag-${suffix}`));
     t.after(() => rm(directory, { recursive: true, force: true }));
     const viewer = join(directory, 'viewer.mjs');
     await writeFile(viewer, 'console.log(JSON.stringify(process.argv.slice(2)));');
-    const paneId = 'test:p2';
+    const paneId = 'term_p2';
     let output;
-    const pane = new DagPane({ sessionId: 'test', parentPane: 'test:p1', socket: 'test',
+    const pane = new DagPane({ sessionId: 'test', parentPane: 'term_p1', scope: 'test',
       stateDir: directory, cwd: directory, node: process.execPath, viewer,
-      herdr: async (action, ...args) => {
-        if (action === 'split') return { pane: { pane_id: paneId } };
+      panes: async (action, ...args) => {
+        if (action === 'split') return paneId;
         if (action === 'run') {
           assert.equal(args[0], paneId);
           output = process.platform === 'win32'
@@ -27,7 +27,6 @@ for (const suffix of ['plain space ', "owner's space "]) {
               Buffer.from(args[1], 'utf16le').toString('base64')], { encoding: 'utf8', timeout: 10000 })
             : execFileSync('/bin/sh', ['-c', args[1]], { encoding: 'utf8', timeout: 10000 });
         }
-        return {};
       } });
     t.after(() => pane.stop());
     // When the real controller opens its viewer, execute the actual run command.
@@ -40,7 +39,7 @@ for (const suffix of ['plain space ', "owner's space "]) {
 for (const primary of ['OMO_CODING_AGENT_DIR', 'SENPI_CODING_AGENT_DIR']) {
   test(`installer defaults to ${primary} and explicit agent directory takes precedence`, async t => {
     // Given distinct active OmO, Senpi, and explicit extension roots.
-    const directory = await mkdtemp(join(tmpdir(), 'herdr-agent-dir-'));
+    const directory = await mkdtemp(join(tmpdir(), 'orca-dag-agent-dir-'));
     t.after(() => rm(directory, { recursive: true, force: true }));
     const active = join(directory, "active owner's root"), explicit = join(directory, 'explicit');
     const env = { ...process.env, HOME: directory, USERPROFILE: directory,
@@ -52,8 +51,8 @@ for (const primary of ['OMO_CODING_AGENT_DIR', 'SENPI_CODING_AGENT_DIR']) {
     const selected = install('--dry-run');
     const overridden = install('--agent-dir', explicit);
     // Then both entrypoints are in the directories actually discovered by OmO.
-    assert.equal(selected.extension, join(active, 'extensions', 'omo-herdr-dag.js'));
-    assert.equal(overridden.extension, join(explicit, 'extensions', 'omo-herdr-dag.js'));
+    assert.equal(selected.extension, join(active, 'extensions', 'omo-orca-dag.js'));
+    assert.equal(overridden.extension, join(explicit, 'extensions', 'omo-orca-dag.js'));
     assert.equal(install().extension, selected.extension);
   });
 }

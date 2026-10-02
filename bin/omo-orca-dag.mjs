@@ -1,16 +1,17 @@
 #!/usr/bin/env node
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 const args = process.argv.slice(2);
-const help = `omo-herdr-dag — install the OmO DAG viewer for Herdr
+const help = `omo-orca-dag — install the OmO DAG viewer for Orca
 
 Usage:
-  omo-herdr-dag install [--dry-run] [--agent-dir PATH] [--lang en|ko|zh-cn]
-  omo-herdr-dag --help
-  omo-herdr-dag --version
+  omo-orca-dag install [--dry-run] [--agent-dir PATH] [--lang en|ko|zh-cn]
+  omo-orca-dag --help
+  omo-orca-dag --version
 
-Install OmO and Herdr separately. After installation, start OmO in a
-Herdr pane and run /reload in an existing session.
+Install OmO and Orca separately. After installation, start OmO in an Orca
+terminal pane, or run /reload in an existing session.
 The first installation defaults to English. Updates keep the selected language.
 `;
 
@@ -32,9 +33,11 @@ try {
         i++;
       } else throw new Error(`Unknown option: ${args[i]}. Use --help.`);
     }
-    await import('../dist/scripts/install.mjs');
+    // Installs straight from Git skip the prepack build; they ship the source installer instead.
+    const built = new URL('../dist/scripts/install.mjs', import.meta.url);
+    await import((existsSync(built) ? built : new URL('../scripts/install.mjs', import.meta.url)).href);
   }
 } catch (error) {
-  console.error(`omo-herdr-dag: ${error.message}`);
+  console.error(`omo-orca-dag: ${error.message}`);
   process.exitCode = 1;
 }

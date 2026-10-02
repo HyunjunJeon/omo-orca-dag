@@ -1,7 +1,6 @@
 import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import { emitKeypressEvents } from 'node:readline';
-import { createHerdr } from './herdr.mjs';
 import { createOrca } from './orca.mjs';
 import { t } from './i18n.mjs';
 import { renderFrame, standaloneTasks } from './render.mjs';
@@ -11,7 +10,7 @@ import { TASK_SCOPE, emptyViewState, isExpanded, loadViewState, saveViewState, s
 const file = process.argv[process.argv.indexOf('--state') + 1];
 if (!process.argv.includes('--state') || !file) throw new Error('Usage: node viewer.mjs --state PATH');
 const option = name => process.argv.includes(name) ? process.argv[process.argv.indexOf(name) + 1] : undefined;
-const panes = option('--backend') === 'orca' ? createOrca() : createHerdr();
+const panes = createOrca();
 // Orca splits cannot keep focus in the source pane. Focus reports (DECSET 1004) arrive only while
 // this pane is shown, so the first one returns focus without navigating away from another view.
 const returnFocus = option('--return-focus');

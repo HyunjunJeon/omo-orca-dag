@@ -5,12 +5,12 @@ import { randomUUID } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import pty from 'node-pty';
 
-const pipe = ['', '', '.', 'pipe', `herdr-viewer-test-${randomUUID()}`].join(String.fromCharCode(92));
+const pipe = ['', '', '.', 'pipe', `orca-dag-viewer-test-${randomUUID()}`].join(String.fromCharCode(92));
 const server = createServer(socket => socket.pipe(process.stdout));
 server.on('error', error => { console.error(error); process.exit(1); });
 server.listen(pipe, () => {
   const terminal = pty.spawn(process.execPath, ['--import', new URL('./pty-capture.mjs', import.meta.url).href,
-    ...process.argv.slice(2)], { cols: 80, rows: 26, env: { ...process.env, HERDR_TEST_FRAME_PIPE: pipe } });
+    ...process.argv.slice(2)], { cols: 80, rows: 26, env: { ...process.env, OMO_DAG_TEST_FRAME_PIPE: pipe } });
   // Drain ConPTY output so the real viewer cannot block on its terminal.
   terminal.onData(() => {});
   terminal.onExit(({ exitCode }) => process.exit(exitCode));

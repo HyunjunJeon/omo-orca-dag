@@ -21,9 +21,8 @@ Describe the expected behavior and what you observed.
 - Operating system (include the remote/container OS if applicable):
 - Node version (`node --version`):
 - OmO / Senpi version:
-- Herdr version or protocol:
-- Herdr installation: stock or customized?
-- OmO running inside a Herdr pane: yes / no
+- Orca version (`orca --version`):
+- OmO running directly in an Orca terminal pane (not inside tmux or Herdr): yes / no
 - Extension revision:
 
 ## Relevant output

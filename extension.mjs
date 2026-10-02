@@ -3,26 +3,22 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { DagPane } from './src/controller.mjs';
-import { createHerdr, herdrSession } from './src/herdr.mjs';
 import { createOrca, orcaSession } from './src/orca.mjs';
 import { resolveViewerNode } from './src/runtime.mjs';
 import { tapStreams } from './src/stream-tap.mjs';
 import { t, languageOf } from './src/i18n.mjs';
 
 export default function extension(pi) {
-  // Herdr wins when nested inside an Orca terminal: its pane hosts this session.
-  const backend = herdrSession() ? 'herdr' : orcaSession() ? 'orca' : null;
-  if (!backend) return;
-  const orca = backend === 'orca';
+  if (!orcaSession()) return;
   let installedLanguage = 'en';
   try { installedLanguage = JSON.parse(readFileSync(new URL('./locale.json', import.meta.url), 'utf8')).language; }
   catch (error) { if (error.code !== 'ENOENT') console.warn(`DAG pane: Cannot read locale configuration: ${error.message}`); }
-  const language = languageOf(process.env.OMO_HERDR_DAG_LANG ?? installedLanguage);
+  const language = languageOf(process.env.OMO_ORCA_DAG_LANG ?? installedLanguage);
   let controller;
   let unsubscribe;
   let streams;
   const viewer = join(dirname(fileURLToPath(import.meta.url)), 'src/viewer.mjs');
-  const stateDir = process.env.OMO_HERDR_DAG_STATE_DIR ?? join(homedir(), '.omo', 'agent', 'herdr-dag');
+  const stateDir = process.env.OMO_ORCA_DAG_STATE_DIR ?? join(homedir(), '.omo', 'agent', 'orca-dag');
 
   async function stop() {
     unsubscribe?.();
@@ -38,12 +34,11 @@ export default function extension(pi) {
     // In-process child agents inherit the parent pane environment, but do not own its UI.
     if (/[/\\]senpi-task[/\\]children[/\\]/.test(ctx.sessionManager.getSessionFile?.() ?? '')) return;
     controller = new DagPane({ sessionId: ctx.sessionManager.getSessionId(),
-      parentPane: orca ? process.env.ORCA_TERMINAL_HANDLE : process.env.HERDR_PANE_ID,
-      socket: orca ? `orca:${process.env.ORCA_WORKTREE_ID}` : process.env.HERDR_SOCKET_PATH,
-      stateDir, cwd: pi.cwd, node: () => resolveViewerNode({ language }), viewer, herdr: orca ? createOrca() : createHerdr(), language,
+      parentPane: process.env.ORCA_TERMINAL_HANDLE, scope: `orca:${process.env.ORCA_WORKTREE_ID}`,
+      stateDir, cwd: pi.cwd, node: () => resolveViewerNode({ language }), viewer, panes: createOrca(), language,
       // Orca splits take focus; the viewer returns it to this pane on its first focus report.
-      viewerArgs: orca ? ['--backend', 'orca', '--return-focus', process.env.ORCA_TERMINAL_HANDLE] : [],
-      taskStateDir: process.env.OMO_HERDR_DAG_TASK_STATE_DIR,
+      viewerArgs: ['--return-focus', process.env.ORCA_TERMINAL_HANDLE],
+      taskStateDir: process.env.OMO_ORCA_DAG_TASK_STATE_DIR,
       notify: message => ctx.ui.notify(message, 'warning') });
     const owner = controller;
     // In-process child sessions stream through the shared Senpi AgentSession class.

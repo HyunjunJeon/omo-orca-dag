@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { resolveViewerNode } from '../src/runtime.mjs';
 
 const reply = (path, version = '24.14.0', bun = false) => ({
-  stdout: JSON.stringify({ runtime: 'omo-herdr-dag-node', path, version, bun }),
+  stdout: JSON.stringify({ runtime: 'omo-orca-dag-node', path, version, bun }),
 });
 
 test('compiled omob hosts use a probed Node on PATH instead of the OmO binary', async () => {
@@ -23,10 +23,10 @@ test('ordinary Node hosts keep their validated absolute runtime', async () => {
 
 test('an explicit Node path takes precedence and does not silently fall back', async () => {
   const calls = [];
-  await assert.rejects(resolveViewerNode({ env: { OMO_HERDR_DAG_NODE: '/missing/node' }, execPath: '/usr/bin/node',
-    run: async command => { calls.push(command); throw new Error('ENOENT'); } }), /OMO_HERDR_DAG_NODE/);
+  await assert.rejects(resolveViewerNode({ env: { OMO_ORCA_DAG_NODE: '/missing/node' }, execPath: '/usr/bin/node',
+    run: async command => { calls.push(command); throw new Error('ENOENT'); } }), /OMO_ORCA_DAG_NODE/);
   assert.deepEqual(calls, ['/missing/node']);
-  assert.equal(await resolveViewerNode({ env: { OMO_HERDR_DAG_NODE: '/opt/Node Runtime/node' },
+  assert.equal(await resolveViewerNode({ env: { OMO_ORCA_DAG_NODE: '/opt/Node Runtime/node' },
     run: async command => reply(command) }), '/opt/Node Runtime/node');
 });
 
@@ -41,5 +41,5 @@ test('unsupported host Node falls back to PATH and rejects non-Node probe respon
 });
 
 test('the real Node probe returns an executable runtime', async () => {
-  assert.equal(await resolveViewerNode({ env: { ...process.env, OMO_HERDR_DAG_NODE: process.execPath } }), process.execPath);
+  assert.equal(await resolveViewerNode({ env: { ...process.env, OMO_ORCA_DAG_NODE: process.execPath } }), process.execPath);
 });

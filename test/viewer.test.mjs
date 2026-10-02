@@ -328,7 +328,7 @@ test('real viewer PTY returns focus to the Orca source pane once, then closes it
   await writeJson(file, { sessionId: 'orca-pty', language: 'en', connected: true, tasks: [],
     runs: [{ id: 'r1', name: 'ORCA_RUN', status: 'running', nodes: [{ id: 'n', label: 'ORCA_NODE', state: 'running' }], edges: [] }] });
   const orca = await fakeOrca(t);
-  const viewer = openViewer(file, t, ['--close-pane', 'term_view1', '--backend', 'orca', '--return-focus', 'term_parent'],
+  const viewer = openViewer(file, t, ['--close-pane', 'term_view1', '--return-focus', 'term_parent'],
     { ...process.env, ORCA_CLI_COMMAND: orca.bin, ORCA_WORKTREE_ID: 'repo-1::/work/project', ORCA_TERMINAL_HANDLE: 'term_view1' });
   await viewer.frame(text => text.includes('ORCA_RUN'));
   // Orca reports focus on DECSET 1004 only while the pane is shown; the first report hands focus back.

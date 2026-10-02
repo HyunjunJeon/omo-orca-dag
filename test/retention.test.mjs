@@ -10,7 +10,7 @@ import { sessionId } from './fixtures.mjs';
 
 const DAY = 86400000;
 const makeDir = async t => {
-  const directory = await fs.mkdtemp(join(tmpdir(), 'herdr-retention-'));
+  const directory = await fs.mkdtemp(join(tmpdir(), 'orca-dag-retention-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   return directory;
 };
@@ -18,15 +18,15 @@ const age = (path, days) => utimes(path, days * DAY / 1000, days * DAY / 1000);
 
 test('retention days default to 14 and honor valid overrides', () => {
   assert.equal(retentionDaysFromEnv({}), 14);
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: ' 7 ' }), 7);
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: '0.5' }), 0.5);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: ' 7 ' }), 7);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: '0.5' }), 0.5);
 });
 
 test('zero, negative, and non-numeric values disable pruning', () => {
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: '0' }), 0);
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: '-3' }), 0);
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: 'two weeks' }), 0);
-  assert.equal(retentionDaysFromEnv({ OMO_HERDR_DAG_RETENTION_DAYS: '' }), 14);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: '0' }), 0);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: '-3' }), 0);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: 'two weeks' }), 0);
+  assert.equal(retentionDaysFromEnv({ OMO_ORCA_DAG_RETENTION_DAYS: '' }), 14);
 });
 
 test('pruning removes expired snapshot families and keeps fresh and protected files', async t => {
@@ -81,17 +81,16 @@ test('a failed removal is reported and does not stop other pruning', async t => 
 test('start() prunes expired snapshots but always spares the current session', async t => {
   const stateDir = await makeDir(t);
   const calls = [], panes = new Set();
-  const herdr = async (...args) => {
+  const orca = async (...args) => {
     calls.push(args);
-    if (args[0] === 'split') { const pane_id = `test:p${panes.size + 1}`; panes.add(pane_id); return { pane: { pane_id } }; }
-    if (args[0] === 'get' && !panes.has(args[1])) throw new Error('pane_not_found');
-    if (args[0] === 'list') return { panes: [] };
+    if (args[0] === 'split') { const handle = `term_p${panes.size + 1}`; panes.add(handle); return handle; }
+    if (args[0] === 'get' && !panes.has(args[1])) throw new Error('terminal_handle_stale');
+    if (args[0] === 'list') return [];
     if (args[0] === 'close') panes.delete(args[1]);
-    return {};
   };
-  const options = { sessionId, parentPane: 'test:p0', socket: '/tmp/retention.sock', stateDir,
-    cwd: stateDir, node: '/usr/bin/node', viewer: '/tmp/viewer.mjs', herdr, retentionDays: 14 };
-  const currentKey = viewKey(options.socket, options.parentPane, sessionId);
+  const options = { sessionId, parentPane: 'term_p0', scope: 'orca:retention', stateDir,
+    cwd: stateDir, node: '/usr/bin/node', viewer: '/tmp/viewer.mjs', panes: orca, retentionDays: 14 };
+  const currentKey = viewKey(options.scope, options.parentPane, sessionId);
   const oldKey = 'aaaaaaaaaaaaaaaaaaaaaaaa';
   for (const name of [`${oldKey}.json`, `${oldKey}.pane.json`, `${oldKey}.json.view.json`,
     `${currentKey}.json`, `${currentKey}.pane.json`]) {

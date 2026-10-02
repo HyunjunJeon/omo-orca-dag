@@ -8,11 +8,10 @@ import { languageOf, t } from '../src/i18n.mjs';
 const source = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const agentDir = resolve(process.argv.includes('--agent-dir') ? process.argv[process.argv.indexOf('--agent-dir') + 1]
   : process.env.OMO_CODING_AGENT_DIR || process.env.SENPI_CODING_AGENT_DIR || join(homedir(), '.omo', 'agent'));
-const container = join(agentDir, 'herdr-dag', 'integration');
-const entry = 'omo-herdr-dag.js';
+const container = join(agentDir, 'orca-dag', 'integration');
+const entry = 'omo-orca-dag.js';
 const wrapper = join(agentDir, 'extensions', entry);
-const legacyWrapper = join(agentDir, 'extensions', 'herdr-dag.js');
-const marker = '// managed by omo-herdr-dag';
+const marker = '// managed by omo-orca-dag';
 async function optionalText(path) {
   try { return await readFile(path, 'utf8'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; return undefined; }
@@ -39,8 +38,6 @@ try {
 if (entries && (await optionalText(join(container, '.installed-by'))) !== marker) {
   throw new Error(t(language, 'unmanagedDirectory', { path: container }));
 }
-const legacyText = await optionalText(legacyWrapper);
-const legacyExtension = legacyText?.startsWith(marker) ? legacyWrapper : undefined;
 // Retain each prior generation in place as the update backup. Every transitive
 // module URL changes on reinstall; clearing Senpi's factory cache is insufficient.
 const numbers = (entries ?? []).map(name => /^generation-(\d+)$/.exec(name)).filter(Boolean).map(match => Number(match[1]));
@@ -48,7 +45,7 @@ const generation = `generation-${String(Math.max(0, ...numbers) + 1).padStart(6,
 const integration = join(container, generation);
 const backup = entries ? (current ? previous : `${container}.backup-${generation}`) : undefined;
 const plan = { integration, extension: wrapper, source, entry, language,
-  ...(backup ? { backup } : {}), ...(legacyExtension ? { legacyExtension } : {}), activation: t(language, 'activation') };
+  ...(backup ? { backup } : {}), activation: t(language, 'activation') };
 if (process.argv.includes('--dry-run')) { console.log(JSON.stringify(plan, null, 2)); process.exit(0); }
 await mkdir(dirname(container), { recursive: true, mode: 0o700 });
 await mkdir(dirname(wrapper), { recursive: true, mode: 0o700 });
@@ -68,10 +65,9 @@ try {
   await rename(staged, integration);
   await writeFile(join(container, `current.json.tmp-${stamp}`), JSON.stringify({ generation }) + '\n', { mode: 0o600 });
   await rename(join(container, `current.json.tmp-${stamp}`), join(container, 'current.json'));
-  const text = `${marker}\nexport { default } from '../herdr-dag/integration/${generation}/extension.mjs';\n`;
+  const text = `${marker}\nexport { default } from '../orca-dag/integration/${generation}/extension.mjs';\n`;
   await writeFile(`${wrapper}.tmp-${stamp}`, text, { mode: 0o600 });
   await rename(`${wrapper}.tmp-${stamp}`, wrapper);
-  if (legacyExtension) await rm(legacyExtension);
 } finally {
   await rm(staged, { recursive: true, force: true });
 }

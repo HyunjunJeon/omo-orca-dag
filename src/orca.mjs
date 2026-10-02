@@ -4,6 +4,13 @@ import { delimiter, isAbsolute, join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
+export const quote = value => `'${String(value).replaceAll("'", "'\\''")}'`;
+
+export function shellCommand(args, platform = process.platform) {
+  // Windows terminals run PowerShell, where quoted executables need &.
+  if (platform === 'win32') return `& ${args.map(value => `'${String(value).replaceAll("'", "''")}'`).join(' ')}`;
+  return args.map(quote).join(' ');
+}
 
 function executableFile(path) {
   try { return statSync(path).isFile(); }
@@ -23,12 +30,14 @@ export function resolveOrcaBin(env = process.env, platform = process.platform) {
 }
 
 export function orcaSession(env = process.env) {
+  // Inside a Herdr pane the upstream omo-herdr-dag owns the viewer.
+  if (env.HERDR_ENV === '1') return false;
   // TERM_PROGRAM changes under a nested multiplexer, so an inherited handle alone is not a live Orca pane.
   if (env.TERM_PROGRAM !== 'Orca' || !env.ORCA_TERMINAL_HANDLE || !env.ORCA_WORKTREE_ID) return false;
   return Boolean(resolveOrcaBin(env));
 }
 
-// Translates the controller's pane operations (Herdr's `pane` vocabulary) into Orca terminal commands.
+// Pane operations used by the controller and viewer, run through the public `orca terminal` CLI.
 export function createOrca(env = process.env) {
   function cli() {
     const bin = resolveOrcaBin(env);
@@ -49,40 +58,36 @@ export function createOrca(env = process.env) {
     return reply.result;
   }
   return async (operation, ...args) => {
-    const option = name => args[args.indexOf(name) + 1];
     switch (operation) {
       case 'split': {
-        // Orca has no ratio, cwd, or no-focus options; the viewer hands focus back itself.
-        const result = await orca('terminal', 'split', '--terminal', option('--pane'), '--direction', 'horizontal');
-        return { pane: { pane_id: result?.split?.handle } };
+        // Orca has no ratio or no-focus options; the viewer hands focus back itself.
+        const result = await orca('terminal', 'split', '--terminal', args[0], '--direction', 'horizontal');
+        return result?.split?.handle;
       }
-      // `terminal rename` titles the whole tab, including the OmO pane; the viewer titles its own pane.
-      case 'rename': return {};
       case 'run': {
         const result = await orca('terminal', 'send', '--terminal', args[0], '--text', args[1], '--enter');
         if (result?.send?.accepted === false) throw new Error(`Orca did not accept input for ${args[0]}`);
-        return {};
+        return;
       }
       case 'get': {
         // Orca keeps answering for a closed pane: its record is orphaned from the layout or has exited.
         const terminal = (await orca('terminal', 'show', '--terminal', args[0]))?.terminal;
         if (terminal?.orphaned || terminal?.exitCause) throw new Error(`terminal_not_found: ${args[0]} is closed`);
-        return { pane: { pane_id: terminal?.handle } };
+        return terminal?.handle;
       }
       case 'list': {
         const result = await orca('terminal', 'list', '--worktree', `id:${env.ORCA_WORKTREE_ID}`);
-        return { panes: (result?.terminals ?? []).map(terminal => ({
-          pane_id: terminal.handle, tab_id: terminal.tabId, terminal_title: terminal.title })) };
+        return (result?.terminals ?? []).map(({ handle, tabId, title }) => ({ handle, tabId, title }));
       }
       case 'close':
         // Closing this process's own pane tears down its PTY and would kill a waiting CLI mid-request.
         if (args[0] === env.ORCA_TERMINAL_HANDLE) {
           spawn(cli(), ['terminal', 'close', '--terminal', args[0], '--json'], { env, detached: true, stdio: 'ignore' }).unref();
-          return {};
+          return;
         }
         await orca('terminal', 'close', '--terminal', args[0]);
-        return {};
-      case 'focus': await orca('terminal', 'focus', '--terminal', args[0]); return {};
+        return;
+      case 'focus': await orca('terminal', 'focus', '--terminal', args[0]); return;
       default: throw new Error(`Unsupported Orca pane operation: ${operation}`);
     }
   };

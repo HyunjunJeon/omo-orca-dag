@@ -8,7 +8,7 @@ import { clean } from './model.mjs';
 // single process-wide wrapper forwards those events to the listeners of the
 // current extension generation; reloaded generations replace only their listener.
 const BARREL = Symbol.for('omo.senpi-task.senpiBarrel');
-const HUB = Symbol.for('omo-herdr-dag.streamHub');
+const HUB = Symbol.for('omo-orca-dag.streamHub');
 const forwarded = new Set(['turn_start', 'message_update', 'message_end', 'tool_execution_start',
   'tool_execution_end', 'auto_retry_start', 'agent_end']);
 const TAIL = 200;

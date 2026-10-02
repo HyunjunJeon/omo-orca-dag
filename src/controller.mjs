@@ -3,34 +3,30 @@ import { readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { readJson, writeJson } from './storage.mjs';
 import { pruneExpiredSnapshots, retentionDaysFromEnv } from './retention.mjs';
-import { shellCommand } from './herdr.mjs';
+import { shellCommand } from './orca.mjs';
 import { normalizeRun, sessionRuns } from './model.mjs';
 import { t, languageOf } from './i18n.mjs';
 import { TaskData } from './task-data.mjs';
 
-export function viewKey(socket, pane, session) {
-  return createHash('sha256').update(JSON.stringify([socket, pane, session])).digest('hex').slice(0, 24);
+export function viewKey(scope, pane, session) {
+  return createHash('sha256').update(JSON.stringify([scope, pane, session])).digest('hex').slice(0, 24);
 }
 
-export function dagTitle(sessionId) {
-  return `DAG · ${sessionId.slice(0, 8)}`;
-}
-
-export function isDagViewerPane(pane) {
-  return [pane?.label, pane?.terminal_title, pane?.terminal_title_stripped]
-    .some(name => typeof name === 'string' && (name.startsWith('DAG · ') || name === 'OmO DAG'));
+// The viewer sets this title on its own pane (Orca's `terminal rename` would retitle the whole tab).
+export function isDagViewerPane(terminal) {
+  return terminal?.title === 'OmO DAG';
 }
 
 function missingPane(error) {
-  return /pane_not_found|unknown pane|pane .*not found|terminal_handle_stale|terminal_not_found|terminal_exited/i.test(`${error.message} ${error.stderr ?? ''}`);
+  return /terminal_handle_stale|terminal_not_found|terminal_exited/i.test(`${error.message} ${error.stderr ?? ''}`);
 }
 
 export class DagPane {
-  constructor({ sessionId, parentPane, socket, stateDir, cwd, node, viewer, herdr, viewerArgs = [], notify = () => {}, language = 'en', taskStateDir, retentionDays, streamDelay = 250 }) {
-    // `herdr` runs pane operations in Herdr's vocabulary; src/orca.mjs translates them for Orca.
-    Object.assign(this, { sessionId, parentPane, stateDir, cwd, node, viewer, herdr, viewerArgs, notify });
+  constructor({ sessionId, parentPane, scope, stateDir, cwd, node, viewer, panes, viewerArgs = [], notify = () => {}, language = 'en', taskStateDir, retentionDays, streamDelay = 250 }) {
+    // `panes` runs pane operations through the Orca CLI (src/orca.mjs).
+    Object.assign(this, { sessionId, parentPane, stateDir, cwd, node, viewer, panes, viewerArgs, notify });
     this.language = languageOf(language);
-    this.key = viewKey(socket, parentPane, sessionId);
+    this.key = viewKey(scope, parentPane, sessionId);
     this.stateFile = join(stateDir, `${this.key}.json`);
     this.recordFile = join(stateDir, `${this.key}.pane.json`);
     this.checkpointDir = join(taskStateDir ?? join(cwd, '.omo', 'senpi-task'), 'dag', 'runs');
@@ -168,11 +164,11 @@ export class DagPane {
 
   async listDagPanes() {
     try {
-      const panes = (await this.herdr('list'))?.panes ?? [];
-      const tab = panes.find(pane => pane.pane_id === this.parentPane)?.tab_id;
-      return panes.filter(isDagViewerPane)
-        .filter(pane => pane.pane_id && pane.pane_id !== this.parentPane && (!tab || pane.tab_id === tab))
-        .map(pane => pane.pane_id);
+      const terminals = (await this.panes('list')) ?? [];
+      const tab = terminals.find(terminal => terminal.handle === this.parentPane)?.tabId;
+      return terminals.filter(isDagViewerPane)
+        .filter(terminal => terminal.handle && terminal.handle !== this.parentPane && (!tab || terminal.tabId === tab))
+        .map(terminal => terminal.handle);
     } catch (error) {
       if (error instanceof Error) return [];
       throw error;
@@ -180,7 +176,7 @@ export class DagPane {
   }
 
   async closePane(paneId) {
-    try { await this.herdr('close', paneId); }
+    try { await this.panes('close', paneId); }
     catch (error) {
       if (!missingPane(error)) this.notify(t(this.language, 'closeFailed', { error: error.message }));
     }
@@ -198,7 +194,7 @@ export class DagPane {
     if (record && !force) return record.paneId;
     if (record?.paneId) {
       try {
-        await this.herdr('get', record.paneId);
+        await this.panes('get', record.paneId);
         if (record.ready) {
           await this.closeDagPanes(record.paneId);
           return record.paneId;
@@ -213,13 +209,10 @@ export class DagPane {
     // Record an attempt before mutation: a timeout must not create repeated orphan panes.
     await writeJson(this.recordFile, { attempted: true });
     await this.closeDagPanes();
-    const result = await this.herdr('split', '--pane', this.parentPane, '--direction', 'right',
-      '--ratio', '0.65', '--cwd', this.cwd, '--no-focus');
-    const paneId = result?.pane?.pane_id;
+    const paneId = await this.panes('split', this.parentPane);
     if (!paneId) throw new Error(t(this.language, 'missingPaneId'));
     await writeJson(this.recordFile, { paneId, ready: false });
-    await this.herdr('rename', paneId, dagTitle(this.sessionId));
-    await this.herdr('run', paneId, shellCommand([this.node, this.viewer, '--state', this.stateFile, '--close-pane', paneId, ...this.viewerArgs]));
+    await this.panes('run', paneId, shellCommand([this.node, this.viewer, '--state', this.stateFile, '--close-pane', paneId, ...this.viewerArgs]));
     await writeJson(this.recordFile, { paneId, ready: true });
     return paneId;
   }

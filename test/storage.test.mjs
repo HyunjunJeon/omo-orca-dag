@@ -8,7 +8,7 @@ import { writeJson, readJson } from '../src/storage.mjs';
 
 test('atomic replacement survives a transient Windows sharing violation', async t => {
   // Given an existing snapshot and a rename denied once by a Windows reader.
-  const directory = await fs.mkdtemp(join(tmpdir(), 'herdr-storage-'));
+  const directory = await fs.mkdtemp(join(tmpdir(), 'orca-dag-storage-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const file = join(directory, 'state.json');
   await writeJson(file, { generation: 1 });
@@ -35,7 +35,7 @@ test('atomic replacement survives a transient Windows sharing violation', async 
 
 test('permanent replacement failures preserve the previous snapshot and surface the error', async t => {
   // Given a snapshot and a permanently denied destination.
-  const directory = await fs.mkdtemp(join(tmpdir(), 'herdr-storage-'));
+  const directory = await fs.mkdtemp(join(tmpdir(), 'orca-dag-storage-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const file = join(directory, 'state.json');
   await writeJson(file, { generation: 1 });
@@ -49,7 +49,7 @@ test('permanent replacement failures preserve the previous snapshot and surface 
 });
 
 test('cleanup failure preserves the primary write error and exposes the cleanup cause', async t => {
-  const directory = await fs.mkdtemp(join(tmpdir(), 'herdr-storage-cleanup-'));
+  const directory = await fs.mkdtemp(join(tmpdir(), 'orca-dag-storage-cleanup-'));
   const remove = fs.rm;
   t.after(async () => {
     t.mock.restoreAll();

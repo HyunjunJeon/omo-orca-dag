@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // directory. Startup retention prunes entries whose last modification is older
 // than the configured number of days, always sparing the current session.
 export function retentionDaysFromEnv(env = process.env) {
-  const raw = env.OMO_HERDR_DAG_RETENTION_DAYS?.trim();
+  const raw = env.OMO_ORCA_DAG_RETENTION_DAYS?.trim();
   if (raw === undefined || raw === '') return 14;
   const days = Number(raw);
   // Zero or invalid values disable pruning instead of deleting everything.

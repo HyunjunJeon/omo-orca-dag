@@ -32,7 +32,7 @@ jobs:
           import { readFileSync, appendFileSync } from 'node:fs';
           const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
           const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
-          assert.equal(pkg.name, 'omo-herdr-dag');
+          assert.equal(pkg.name, 'omo-orca-dag');
           assert.equal(lock.version, pkg.version, 'Lockfile version must match');
           assert.equal(lock.packages[''].version, pkg.version, 'Lockfile package version must match');
           assert.match(pkg.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/);

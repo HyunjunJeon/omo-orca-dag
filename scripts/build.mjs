@@ -15,7 +15,7 @@ try {
   for (const file of files.filter(name => name.endsWith('.mjs'))) {
     execFileSync(process.execPath, ['--check', join(stage, file)], { stdio: 'pipe' });
   }
-  execFileSync(process.execPath, ['--check', join(root, 'bin/omo-herdr-dag.mjs')], { stdio: 'pipe' });
+  execFileSync(process.execPath, ['--check', join(root, 'bin/omo-orca-dag.mjs')], { stdio: 'pipe' });
   // Replace only the generated output after all source files pass syntax checks.
   await rm(join(root, 'dist'), { recursive: true, force: true });
   await rename(stage, join(root, 'dist'));

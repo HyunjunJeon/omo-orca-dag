@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const marker = '// managed by omo-herdr-dag';
+const marker = '// managed by omo-orca-dag';
 async function fixture(t) {
   const temp = await mkdtemp(join(tmpdir(), 'omo-install-reload-'));
   t.after(() => rm(temp, { recursive: true, force: true }));
@@ -26,7 +26,7 @@ async function fixture(t) {
 test('each install has unique dependency paths, with retained generations, locale and stable runtime records', async t => {
   const { agent, source, install } = await fixture(t);
   const first = install('--lang', 'ko');
-  const stateRoot = join(agent, 'herdr-dag');
+  const stateRoot = join(agent, 'orca-dag');
   for (const name of ['session.json', 'session.pane.json', 'session.json.view.json']) {
     await writeFile(join(stateRoot, name), JSON.stringify({ retained: name }));
   }
@@ -64,14 +64,11 @@ test('dry-run on a new agent is deterministic and creates nothing', async t => {
 
 test('legacy flat installation migrates with its language, managed marker and update backup intact', async t => {
   const { agent, source, install } = await fixture(t);
-  const legacy = join(agent, 'herdr-dag', 'integration');
-  const wrapper = join(agent, 'extensions', 'herdr-dag.js');
+  const legacy = join(agent, 'orca-dag', 'integration');
   await mkdir(legacy, { recursive: true });
-  await mkdir(dirname(wrapper), { recursive: true });
   await writeFile(join(legacy, '.installed-by'), marker);
   await writeFile(join(legacy, 'locale.json'), '{"language":"ko"}\n');
   await writeFile(join(legacy, 'extension.mjs'), 'export default () => {};\n');
-  await writeFile(wrapper, `${marker}\nexport { default } from '../herdr-dag/integration/extension.mjs';\n`);
   const result = install();
   assert.equal(dirname(result.integration), legacy);
   assert.equal(result.language, 'ko');
@@ -79,42 +76,23 @@ test('legacy flat installation migrates with its language, managed marker and up
   assert.equal(await readFile(join(result.integration, 'LICENSE'), 'utf8'), await readFile(join(source, 'LICENSE'), 'utf8'));
   assert.equal(await readFile(join(result.backup, 'extension.mjs'), 'utf8'), 'export default () => {};\n');
   assert.equal(JSON.parse(await readFile(join(result.backup, 'locale.json'), 'utf8')).language, 'ko');
-  await assert.rejects(readFile(wrapper), { code: 'ENOENT' });
   assert.ok((await readFile(result.extension, 'utf8')).startsWith(marker));
-  assert.equal(result.entry, 'omo-herdr-dag.js');
+  assert.equal(result.entry, 'omo-orca-dag.js');
 });
 
 test('unmanaged integration and wrapper are rejected without changing them', async t => {
   const { agent, install } = await fixture(t);
-  const integration = join(agent, 'herdr-dag', 'integration');
+  const integration = join(agent, 'orca-dag', 'integration');
   await mkdir(integration, { recursive: true });
   await writeFile(join(integration, '.installed-by'), 'foreign');
   assert.throws(() => install());
   assert.equal(await readFile(join(integration, '.installed-by'), 'utf8'), 'foreign');
   assert.deepEqual(await readdir(integration), ['.installed-by']);
-  const wrapper = join(agent, 'extensions', 'omo-herdr-dag.js');
+  const wrapper = join(agent, 'extensions', 'omo-orca-dag.js');
   await mkdir(dirname(wrapper), { recursive: true });
   await writeFile(wrapper, 'export default () => {};\n');
   assert.throws(() => install('--dry-run'));
   assert.equal(await readFile(wrapper, 'utf8'), 'export default () => {};\n');
-});
-
-test('a managed herdr-dag.js loader is removed and a foreign one is kept', async t => {
-  const { agent, install } = await fixture(t);
-  const legacy = join(agent, 'extensions', 'herdr-dag.js');
-  await mkdir(dirname(legacy), { recursive: true });
-  await writeFile(legacy, 'export default () => {};\n');
-  const kept = install();
-  assert.equal(kept.legacyExtension, undefined);
-  assert.equal(await readFile(legacy, 'utf8'), 'export default () => {};\n');
-  await writeFile(legacy, `${marker}\nexport { default } from '../herdr-dag/integration/extension.mjs';\n`);
-  const dry = install('--dry-run');
-  assert.equal(dry.legacyExtension, legacy);
-  assert.equal(await readFile(legacy, 'utf8'), `${marker}\nexport { default } from '../herdr-dag/integration/extension.mjs';\n`);
-  const removed = install();
-  await assert.rejects(readFile(legacy), { code: 'ENOENT' });
-  assert.equal(removed.entry, 'omo-herdr-dag.js');
-  assert.ok((await readFile(removed.extension, 'utf8')).startsWith(marker));
 });
 
 // Explicit integration target; the ordinary package tests do not require OmO or Bun.
