@@ -25,6 +25,6 @@ These checks ran on the code with both backends and were repeated after the pack
 - **Background tabs:** whether focus returns when you later visit a tab whose viewer opened while hidden is not verified; the viewer may keep focus there.
 - **Real workflows:** checks used synthetic snapshots; a fresh model-driven workflow has not been recorded.
 - **Other versions:** other OmO, Senpi, and Orca versions are unverified. The extension depends on OmO/Senpi internal event contracts and on the Orca CLI's JSON output.
-- **Installing from GitHub:** recorded separately once `npx github:HyunjunJeon/omo-orca-dag install --dry-run` has run against the pushed repository.
+- **Installing from GitHub:** with the repository private, `npx github:HyunjunJeon/omo-orca-dag install --dry-run --agent-dir <temp>` printed the install plan from the pushed repository when `GIT_SSH_COMMAND` named a key with access (npm 11.19). That run used the Git-install source fallback. With default credentials lacking access, npx exited with code 128 and no message.
 
 Add new compatibility evidence only after running the relevant environment, and omit private hostnames, session IDs, and local account paths.

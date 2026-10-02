@@ -92,7 +92,14 @@ npx github:HyunjunJeon/omo-orca-dag install --dry-run   # 미리 보기만 하�
 npx github:HyunjunJeon/omo-orca-dag install
 ```
 
-`npx`가 이 저장소를 캐시에 내려받아 설치 프로그램을 실행하고, 설치 프로그램은 파일을 OmO 에이전트 디렉터리에 복사합니다. 설치된 사본은 npx 캐시와 무관하게 동작합니다. npm은 사용자의 Git 인증 정보로 저장소를 받으므로, 이 저장소를 읽을 권한이 있어야 합니다.
+`npx`가 이 저장소를 캐시에 내려받아 설치 프로그램을 실행하고, 설치 프로그램은 파일을 OmO 에이전트 디렉터리에 복사합니다. 설치된 사본은 npx 캐시와 무관하게 동작합니다.
+
+npm은 기본 Git 인증 정보로 저장소를 받으므로, 그 인증 정보에 이 저장소를 읽을 권한이 있어야 합니다. 기본 키가 아닌 다른 SSH 키로 이 저장소에 접근한다면, 명령을 실행할 때 그 키를 지정하세요.
+
+```bash
+GIT_SSH_COMMAND="ssh -i ~/.ssh/<접근-권한이-있는-키> -o IdentitiesOnly=yes" \
+  npx github:HyunjunJeon/omo-orca-dag install --lang ko
+```
 
 viewer 화면 언어의 기본값은 영어입니다. 설치할 때 언어를 고르면, 이후 설치에서도 다른 값을 주지 않는 한 그 선택을 유지합니다.
 
@@ -109,7 +116,7 @@ npx github:HyunjunJeon/omo-orca-dag install --lang en      # 영어로 되돌리
 방법 A로 저장소를 받지 못할 때, 또는 코드를 읽거나 고치거나 테스트를 먼저 돌려 보고 싶을 때 사용합니다.
 
 ```bash
-git clone https://github.com/HyunjunJeon/omo-orca-dag.git
+git clone git@github.com:HyunjunJeon/omo-orca-dag.git   # 또는 https://github.com/HyunjunJeon/omo-orca-dag.git
 cd omo-orca-dag
 npm ci --ignore-scripts               # 개발용 테스트 도구만 설치합니다
 npm test                              # 선택 사항. macOS와 Linux에서는 Python 3가 필요합니다
@@ -283,7 +290,7 @@ snapshot은 로컬 JSON 파일입니다. 세션·실행 ID, 노드 이름과 상
 | 증상 | 확인할 것 |
 | --- | --- |
 | `/dag-pane`이 없습니다 | 같은 pane에서 `echo "$TERM_PROGRAM $ORCA_TERMINAL_HANDLE $ORCA_WORKTREE_ID"`를 실행해 `Orca`와 ID 두 개가 나오는지 보세요. OmO를 tmux, Herdr 같은 멀티플렉서 안이 아니라 Orca pane에서 바로 실행하세요. `orca status --json`이 `"ok": true`인지 확인한 다음, OmO가 실제로 쓰는 에이전트 디렉터리에 `extensions/omo-orca-dag.js`가 있는지 확인하고 `/reload`를 실행하세요. |
-| `npx`가 저장소를 받지 못합니다 | npm 캐시 디렉터리에서 쓰는 Git 인증 정보로는 이 저장소를 읽을 수 없는 경우입니다. 접근 권한이 있는 계정으로 clone하는 방법 B를 사용하세요. |
+| `npx`가 메시지 없이 종료 코드 128로 끝납니다 | 기본 Git 인증 정보로 저장소를 읽지 못한 경우입니다. [방법 A](#방법-a-github에서-바로-설치)처럼 `GIT_SSH_COMMAND`로 접근 권한이 있는 키를 지정하거나, 방법 B를 사용하세요. |
 | viewer에 Node.js 24가 필요하다는 경고가 나옵니다 | Node.js 24 이상을 설치하거나 `OMO_ORCA_DAG_NODE`로 경로를 지정해 OmO를 시작한 뒤 `/dag-pane`을 실행하세요. |
 | pane이 자동으로 열리지 않습니다 | viewer는 workflow DAG와 현재 세션의 OmO task가 있을 때 열립니다. OmO task 기록을 만들지 않는 일반 `parallel()` 호출은 표시 대상이 아닙니다. 직접 닫은 pane은 `/dag-pane`을 실행할 때까지 닫혀 있습니다. |
 | 닫은 pane이 다시 열리지 않습니다 | 의도한 동작입니다. `/dag-pane`을 실행하세요. |

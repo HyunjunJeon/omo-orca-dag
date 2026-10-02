@@ -92,7 +92,14 @@ npx github:HyunjunJeon/omo-orca-dag install --dry-run   # preview only; changes 
 npx github:HyunjunJeon/omo-orca-dag install
 ```
 
-`npx` downloads this repository into its cache and runs the installer, which copies the files into OmO's agent directory. The installed copy does not depend on the npx cache. npm fetches the repository with your Git credentials, so you need read access to it.
+`npx` downloads this repository into its cache and runs the installer, which copies the files into OmO's agent directory. The installed copy does not depend on the npx cache.
+
+npm fetches the repository with Git, using your default credentials, so they need read access to it. If you reach this repository with a different SSH key than your default one, name that key for the command:
+
+```bash
+GIT_SSH_COMMAND="ssh -i ~/.ssh/<key-with-access> -o IdentitiesOnly=yes" \
+  npx github:HyunjunJeon/omo-orca-dag install
+```
 
 The viewer's interface language defaults to English. Choose it at install time; later installs keep the saved choice unless you pass another value:
 
@@ -109,7 +116,7 @@ To install a specific commit or tag, append it to the repository: `npx github:Hy
 Use this when Option A cannot fetch the repository, or when you want to read or change the code or run the tests first.
 
 ```bash
-git clone https://github.com/HyunjunJeon/omo-orca-dag.git
+git clone git@github.com:HyunjunJeon/omo-orca-dag.git   # or https://github.com/HyunjunJeon/omo-orca-dag.git
 cd omo-orca-dag
 npm ci --ignore-scripts               # development-only test tooling
 npm test                              # optional; needs Python 3 on macOS and Linux
@@ -275,7 +282,7 @@ Snapshots are local JSON files with session and run IDs, node labels, states, ta
 | Symptom | What to check |
 | --- | --- |
 | `/dag-pane` is missing | Run `echo "$TERM_PROGRAM $ORCA_TERMINAL_HANDLE $ORCA_WORKTREE_ID"` in the same pane: you should see `Orca` followed by two IDs. Run OmO directly in the Orca pane, not inside tmux, Herdr, or another multiplexer. Check that `orca status --json` reports `"ok": true`. Then confirm that `extensions/omo-orca-dag.js` sits in the agent directory OmO actually uses, and run `/reload`. |
-| `npx` cannot fetch the repository | Your Git credentials cannot read it from npm's cache directory. Use Option B, cloning with the account that has access. |
+| `npx` exits with code 128 and no message | Git could not read the repository with your default credentials. Pass the key that has access through `GIT_SSH_COMMAND`, as shown in [Option A](#option-a-install-directly-from-github), or use Option B. |
 | A warning says the viewer requires Node.js 24 | Install Node.js 24 or later, or start OmO with `OMO_ORCA_DAG_NODE` pointing to one, then run `/dag-pane`. |
 | No pane opens automatically | The viewer opens for workflow DAGs and current-session OmO tasks. Generic `parallel()` calls without OmO task records are not tasks. A pane you closed stays closed until `/dag-pane`. |
 | A closed pane stays closed | Intentional. Run `/dag-pane`. |
