@@ -327,7 +327,7 @@ OmO task 진행 정보: omo.task.updated + 로컬 task 기록
     → 현재 부모 세션 ID로 필터링
     → 정규화한 로컬 snapshot 저장
     → viewer pane 생성 또는 재사용:
-        orca terminal split --terminal <OmO pane> --direction horizontal
+        orca terminal split --terminal <OmO pane> --direction vertical
         orca terminal send --terminal <viewer pane> --text "<viewer 명령>" --enter
     → viewer TUI가 snapshot 파일 변경을 감시
 ```

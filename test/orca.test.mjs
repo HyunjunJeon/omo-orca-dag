@@ -55,7 +55,7 @@ test('Orca adapter runs pane operations through the Orca CLI', posix, async t =>
   await orca('close', 'term_view1');
   await assert.rejects(orca('resize', 'term_view1'), /Unsupported Orca pane operation: resize/);
   assert.deepEqual(await calls(), [
-    ['terminal', 'split', '--terminal', 'term_parent', '--direction', 'horizontal', '--json'],
+    ['terminal', 'split', '--terminal', 'term_parent', '--direction', 'vertical', '--json'],
     ['terminal', 'send', '--terminal', 'term_view1', '--text', "'node' 'viewer.mjs'", '--enter', '--json'],
     ['terminal', 'show', '--terminal', 'term_view1', '--json'],
     ['terminal', 'list', '--worktree', `id:${worktree}`, '--json'],
@@ -85,7 +85,7 @@ test('controller opens an Orca viewer beside the source pane and replaces stale 
   const opened = await calls();
   // Only DAG viewers in the source pane's tab are closed; the source pane and other tabs are untouched.
   assert.deepEqual(opened.filter(call => call[1] === 'close').map(call => call[3]), ['term_leftover']);
-  assert.deepEqual(opened.find(call => call[1] === 'split'), ['terminal', 'split', '--terminal', 'term_parent', '--direction', 'horizontal', '--json']);
+  assert.deepEqual(opened.find(call => call[1] === 'split'), ['terminal', 'split', '--terminal', 'term_parent', '--direction', 'vertical', '--json']);
   const send = opened.find(call => call[1] === 'send');
   assert.equal(send[3], 'term_view1');
   assert.ok(send[5].endsWith("'--close-pane' 'term_view1' '--return-focus' 'term_parent'"), send[5]);

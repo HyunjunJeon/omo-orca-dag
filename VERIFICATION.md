@@ -6,11 +6,12 @@ This record separates observed behavior from assumptions. Herdr results for the 
 
 macOS on arm64, Node 24.21.0, OmO 5.1.9, and Orca 1.4.218. The extension was loaded from the source checkout with `omo -e extension.mjs` in an ordinary Orca terminal, and a scratch extension emitted an explicitly labeled **synthetic** `omo.dag.updated` snapshot through `pi.rpc.emit`. No model workflow ran. An installed upstream omo-herdr-dag was present in the same agent directory and stayed inactive.
 
-- With the OmO tab in the background, the snapshot opened the viewer as a right-hand split titled `OmO DAG`. The active tab did not change, and the four-node graph rendered. A completed snapshot updated the same viewer to `Done 4/4`.
+- With the OmO tab in the background, the snapshot opened the viewer as a split titled `OmO DAG`. The active tab did not change, and the four-node graph rendered. A completed snapshot updated the same viewer to `Done 4/4`.
 - With the OmO tab shown, the viewer's first focus report returned focus to the OmO pane.
 - `q` closed the viewer pane without an error, and `/dag-pane` then opened a new viewer.
 - The Orca CLI behavior the adapter relies on was probed directly:
   - `terminal split` returns the new handle and focuses that pane.
+  - `--direction vertical` places the new pane to the right: in a visible tab, a 61×206 pane became two 61×101 panes. `--direction horizontal` stacks it below, the reverse of Orca's CLI guide; the first release used it and opened the viewer at the bottom. Panes in background tabs report 24×80 until shown, so direction can only be measured in a visible tab.
   - `terminal rename` retitles the whole tab.
   - `terminal close --tab` leaves the PTYs running.
   - A closed handle still answers `terminal show` as an orphaned record.

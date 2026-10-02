@@ -1,6 +1,6 @@
 {
   "name": "omo-orca-dag",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Live OmO workflow DAGs in an Orca side pane.",
   "license": "MIT",
   "repository": {

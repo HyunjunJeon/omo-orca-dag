@@ -319,7 +319,7 @@ Startup recovery: current-session DAG checkpoints
     → filter by the current parent session ID
     → write a normalized local snapshot
     → open or reuse the viewer pane:
-        orca terminal split --terminal <OmO pane> --direction horizontal
+        orca terminal split --terminal <OmO pane> --direction vertical
         orca terminal send --terminal <viewer pane> --text "<viewer command>" --enter
     → the viewer TUI watches the snapshot file
 ```

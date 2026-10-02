@@ -60,8 +60,9 @@ export function createOrca(env = process.env) {
   return async (operation, ...args) => {
     switch (operation) {
       case 'split': {
-        // Orca has no ratio or no-focus options; the viewer hands focus back itself.
-        const result = await orca('terminal', 'split', '--terminal', args[0], '--direction', 'horizontal');
+        // Orca's renderer places a `vertical` split side by side and stacks a `horizontal` one below,
+        // the reverse of its CLI guide. It has no ratio or no-focus options; the viewer hands focus back itself.
+        const result = await orca('terminal', 'split', '--terminal', args[0], '--direction', 'vertical');
         return result?.split?.handle;
       }
       case 'run': {
