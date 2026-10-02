@@ -22,12 +22,13 @@ export function isDagViewerPane(pane) {
 }
 
 function missingPane(error) {
-  return /pane_not_found|unknown pane|pane .*not found/i.test(`${error.message} ${error.stderr ?? ''}`);
+  return /pane_not_found|unknown pane|pane .*not found|terminal_handle_stale|terminal_not_found|terminal_exited/i.test(`${error.message} ${error.stderr ?? ''}`);
 }
 
 export class DagPane {
-  constructor({ sessionId, parentPane, socket, stateDir, cwd, node, viewer, herdr, notify = () => {}, language = 'en', taskStateDir, retentionDays, streamDelay = 250 }) {
-    Object.assign(this, { sessionId, parentPane, stateDir, cwd, node, viewer, herdr, notify });
+  constructor({ sessionId, parentPane, socket, stateDir, cwd, node, viewer, herdr, viewerArgs = [], notify = () => {}, language = 'en', taskStateDir, retentionDays, streamDelay = 250 }) {
+    // `herdr` runs pane operations in Herdr's vocabulary; src/orca.mjs translates them for Orca.
+    Object.assign(this, { sessionId, parentPane, stateDir, cwd, node, viewer, herdr, viewerArgs, notify });
     this.language = languageOf(language);
     this.key = viewKey(socket, parentPane, sessionId);
     this.stateFile = join(stateDir, `${this.key}.json`);
@@ -218,7 +219,7 @@ export class DagPane {
     if (!paneId) throw new Error(t(this.language, 'missingPaneId'));
     await writeJson(this.recordFile, { paneId, ready: false });
     await this.herdr('rename', paneId, dagTitle(this.sessionId));
-    await this.herdr('run', paneId, shellCommand([this.node, this.viewer, '--state', this.stateFile, '--close-pane', paneId]));
+    await this.herdr('run', paneId, shellCommand([this.node, this.viewer, '--state', this.stateFile, '--close-pane', paneId, ...this.viewerArgs]));
     await writeJson(this.recordFile, { paneId, ready: true });
     return paneId;
   }

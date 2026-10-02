@@ -11,6 +11,7 @@ import { messages } from '../src/i18n.mjs';
 import { width } from '../src/render.mjs';
 import { writeJson } from '../src/storage.mjs';
 import { TASK_SCOPE } from '../src/view-state.mjs';
+import { fakeOrca } from './orca-cli.mjs';
 
 test('real standalone PTY respects saved folds, preserves task selection, switches mixed views and persists', { timeout: 25000 }, async t => {
   const dir = await mkdtemp(join(tmpdir(), 'tasks-pty-'));
@@ -278,12 +279,12 @@ finally:
   os.close(master)
 `;
 
-function openViewer(file, t) {
+function openViewer(file, t, extraArgs = [], env = process.env) {
   const events = new EventEmitter();
-  const viewerArgs = [fileURLToPath(new URL('../src/viewer.mjs', import.meta.url)), '--state', file];
+  const viewerArgs = [fileURLToPath(new URL('../src/viewer.mjs', import.meta.url)), '--state', file, ...extraArgs];
   const child = process.platform === 'win32'
-    ? spawn(process.execPath, [fileURLToPath(new URL('./windows-pty.mjs', import.meta.url)), ...viewerArgs], { stdio: ['pipe', 'pipe', 'pipe'] })
-    : spawn('python3', ['-u', '-c', bridge, process.execPath, ...viewerArgs], { stdio: ['pipe', 'pipe', 'pipe'] });
+    ? spawn(process.execPath, [fileURLToPath(new URL('./windows-pty.mjs', import.meta.url)), ...viewerArgs], { stdio: ['pipe', 'pipe', 'pipe'], env })
+    : spawn('python3', ['-u', '-c', bridge, process.execPath, ...viewerArgs], { stdio: ['pipe', 'pipe', 'pipe'], env });
   let buffer = '', stderr = '', lastFrame = '';
   child.stderr.on('data', data => { stderr += data; });
   child.stdout.setEncoding('utf8');
@@ -318,6 +319,30 @@ function openViewer(file, t) {
     assert.equal((await exited)[0], 0, stderr);
   } };
 }
+
+test('real viewer PTY returns focus to the Orca source pane once, then closes its own Orca pane', {
+  timeout: 15000, skip: process.platform === 'win32' && 'the fake Orca CLI is a shebang script' }, async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'orca-pty-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = join(dir, 'session.json');
+  await writeJson(file, { sessionId: 'orca-pty', language: 'en', connected: true, tasks: [],
+    runs: [{ id: 'r1', name: 'ORCA_RUN', status: 'running', nodes: [{ id: 'n', label: 'ORCA_NODE', state: 'running' }], edges: [] }] });
+  const orca = await fakeOrca(t);
+  const viewer = openViewer(file, t, ['--close-pane', 'term_view1', '--backend', 'orca', '--return-focus', 'term_parent'],
+    { ...process.env, ORCA_CLI_COMMAND: orca.bin, ORCA_WORKTREE_ID: 'repo-1::/work/project', ORCA_TERMINAL_HANDLE: 'term_view1' });
+  await viewer.frame(text => text.includes('ORCA_RUN'));
+  // Orca reports focus on DECSET 1004 only while the pane is shown; the first report hands focus back.
+  viewer.send({ keys: '\x1b[I' });
+  await orca.waitFor(calls => calls.length === 1);
+  // Later reports are deliberate visits and keep focus; they also never act as navigation keys.
+  await viewer.frame(text => text.includes('ORCA_NODE'), () => viewer.send({ keys: '\x1b[O\x1b[Ij' }));
+  await viewer.close();
+  // Closing its own pane runs a detached CLI that outlives the viewer and its PTY.
+  assert.deepEqual(await orca.waitFor(calls => calls.length === 2), [
+    ['terminal', 'focus', '--terminal', 'term_parent', '--json'],
+    ['terminal', 'close', '--terminal', 'term_view1', '--json'],
+  ]);
+});
 
 test('real viewer PTY selects, toggles, refreshes, switches runs and persists across restart', { timeout: 25000 }, async t => {
   const dir = await mkdtemp(join(tmpdir(), 'dag-pty-'));

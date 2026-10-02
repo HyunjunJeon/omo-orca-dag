@@ -2,6 +2,7 @@ import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import { emitKeypressEvents } from 'node:readline';
 import { createHerdr } from './herdr.mjs';
+import { createOrca } from './orca.mjs';
 import { t } from './i18n.mjs';
 import { renderFrame, standaloneTasks } from './render.mjs';
 import { readJson } from './storage.mjs';
@@ -9,6 +10,12 @@ import { TASK_SCOPE, emptyViewState, isExpanded, loadViewState, saveViewState, s
 
 const file = process.argv[process.argv.indexOf('--state') + 1];
 if (!process.argv.includes('--state') || !file) throw new Error('Usage: node viewer.mjs --state PATH');
+const option = name => process.argv.includes(name) ? process.argv[process.argv.indexOf(name) + 1] : undefined;
+const panes = option('--backend') === 'orca' ? createOrca() : createHerdr();
+// Orca splits cannot keep focus in the source pane. Focus reports (DECSET 1004) arrive only while
+// this pane is shown, so the first one returns focus without navigating away from another view.
+const returnFocus = option('--return-focus');
+let focusReturned = !returnFocus;
 let state = await readJson(file);
 let selectedId = state?.runs?.[0]?.id;
 let view = state?.runs?.length ? 'dag' : 'tasks', selectedTaskId;
@@ -64,7 +71,7 @@ async function refresh() {
   if (again) { again = false; void refresh(); }
 }
 if (process.argv.includes('--once') || !interactive) { draw(); process.exit(0); }
-process.stdout.write('\x1b[?1049h\x1b[?25l\x1b]0;OmO DAG\x07');
+process.stdout.write(`\x1b[?1049h\x1b[?25l\x1b]0;OmO DAG\x07${returnFocus ? '\x1b[?1004h' : ''}`);
 process.stdin.setRawMode(true);
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
@@ -87,11 +94,11 @@ async function close(closePane = false) {
   clearTimeout(timer); clearInterval(clock); watcher.close(); process.stdout.off('resize', resize);
   await saving;
   process.stdin.setRawMode(false);
-  process.stdout.write('\x1b[?25h\x1b[?1049l');
+  process.stdout.write(`${returnFocus ? '\x1b[?1004l' : ''}\x1b[?25h\x1b[?1049l`);
   if (viewError) process.stderr.write(`${t(state?.language, 'viewError', { error: viewError })}\n`);
   if (closePane && process.argv.includes('--close-pane')) {
     const pane = process.argv[process.argv.indexOf('--close-pane') + 1];
-    try { await createHerdr()('close', pane); }
+    try { await panes('close', pane); }
     catch (error) { process.stderr.write(`${t(state?.language, 'closeFailed', { error: error.message })}\n`); }
   }
   process.exit(0);
@@ -99,6 +106,13 @@ async function close(closePane = false) {
 process.stdin.on('keypress', (text, pressed) => {
   if (closing) return;
   const key = pressed.sequence || pressed.name || text;
+  if (key === '\x1b[I' || key === '\x1b[O') {
+    if (key === '\x1b[I' && !focusReturned) {
+      focusReturned = true;
+      panes('focus', returnFocus).catch(cause => { error = cause.message; draw(); });
+    }
+    return;
+  }
   if (key === 'q' || key === '\x03' || key === '\x04') return void close(true);
   if (['\x1b[B', 'j', '\x1b[A', 'k', '\x1b[6~', '\x1b[5~'].includes(key)) revealSelection = false;
   if (key === '\x1b[B' || key === 'j') scroll++;
